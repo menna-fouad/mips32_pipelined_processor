@@ -16,7 +16,7 @@ module MIPS32 # (
     parameter [2:0] BRANCH = 3'b100, JUMP = 3'b101, NOP = 3'b110, HALT = 3'b111
 ) (
     input clk,
-    input reset
+    input reset,
 
     output [9:0] dbg_pc,
     output dbg_halted,
