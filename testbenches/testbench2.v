@@ -11,7 +11,7 @@ module testbench2;
     reg reset;
     initial begin
         reset = 1'b1;
-        #17 reset = 1'b0;
+        #7 reset = 1'b0;
     end
 
     MIPS32 processor (

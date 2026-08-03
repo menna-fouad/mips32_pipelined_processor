@@ -1,5 +1,6 @@
 module main_memory(
     input clk,
+    input reset,
     
     // Stage 1 - IF
     input [9:0] PC, // PC
@@ -19,7 +20,8 @@ module main_memory(
 
     // Fetch instruction at PC
     always @(posedge clk) begin
-        instruction <= memory[PC];
+        if (reset) instruction <= 32'b0; // or a NOP-equivalent opcode
+        else instruction <= memory[PC];
     end
 
     // Read/Write (MEM Stage)
