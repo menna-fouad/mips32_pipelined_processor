@@ -31,13 +31,13 @@ module register_file_tb;
 
         #2;
 
-        #5 rs_addr = 5'd3; rt_addr = 5'd3; wr_addr = 5'd3; wr_data = 32'hDEAD_BEEF; reg_write = 1'b1;
+        #10 rs_addr = 5'd3; rt_addr = 5'd3; wr_addr = 5'd3; wr_data = 32'hDEAD_BEEF; reg_write = 1'b1;
         check(rs_addr, rt_addr, wr_addr, wr_data, reg_write);
         
-        #5 rs_addr = 5'd7; rt_addr = 5'd12; wr_addr = 5'd7; wr_data = 32'h1234_5678; reg_write = 1'b1;
+        #10 rs_addr = 5'd7; rt_addr = 5'd12; wr_addr = 5'd7; wr_data = 32'h1234_5678; reg_write = 1'b1;
         check(rs_addr, rt_addr, wr_addr, wr_data, reg_write);
 
-        #5 rs_addr = 5'd9; rt_addr = 5'd20; wr_addr = 5'd20; wr_data = 32'hCAFE_F00D; reg_write = 1'b1;
+        #10 rs_addr = 5'd9; rt_addr = 5'd20; wr_addr = 5'd20; wr_data = 32'hCAFE_F00D; reg_write = 1'b1;
         check(rs_addr, rt_addr, wr_addr, wr_data, reg_write);
 
         #5 rs_addr = 5'd3; rt_addr = 5'd3; wr_addr = 5'd3; wr_data = 32'hFFFF_FFFF; reg_write = 1'b1;
@@ -55,7 +55,7 @@ module register_file_tb;
     end
 
     initial begin
-        $dumpfile("simulation/unit_level_simulation/mips_test1.wdb");
+        $dumpfile("register_file_tb.wdb");
         $dumpvars(0, register_file_tb);
         #600 $finish;
     end
