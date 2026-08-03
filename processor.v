@@ -11,6 +11,9 @@ module MIPS32 # (
     // J-type instructions
     parameter [5:0] J = 6'b010000,
 
+    // NOP instruction
+    parameter [5:0] NOP_INSTRUCTION = 6'b000000,
+
     // Instruction types
     parameter [2:0] R = 3'b000, I = 3'b001, LOAD = 3'b010, STORE = 3'b011, 
     parameter [2:0] BRANCH = 3'b100, JUMP = 3'b101, NOP = 3'b110, HALT = 3'b111
@@ -50,6 +53,7 @@ module MIPS32 # (
 
     main_memory memory (
         .clk(clk),
+        .reset(reset),
         .PC(INST_ADDR),
         .instruction(IF_ID_IR),
         .write(EX_MEM_WRITE),
@@ -114,6 +118,7 @@ module MIPS32 # (
             if (TAKEN_BRANCH) ID_EX_TYPE <= NOP;
             else begin
                 case (IF_ID_IR[31:26])
+                    NOP_INSTRUCTION : ID_EX_TYPE <= NOP;
                     ADD, SUB, AND, OR, SLT, MUL : ID_EX_TYPE <= R;
                     ADDI, SUBI, SLTI : ID_EX_TYPE <= I;
                     LW : ID_EX_TYPE <= LOAD;
