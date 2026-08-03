@@ -91,7 +91,7 @@ module MIPS32 # (
         if (reset) begin
             PC <= 10'd0;
             IF_ID_NPC <= 32'd0;
-        end else if (!HALTED) begin
+        end else if (!HALTED && IF_ID_IR[31:26] != HLT) begin
             if (TAKEN_BRANCH ||  (EX_MEM_TYPE == JUMP)) begin
                 IF_ID_NPC <= EX_MEM_ALU_OUT + 1;
                 PC <= EX_MEM_ALU_OUT[9:0] + 1;
@@ -109,7 +109,7 @@ module MIPS32 # (
             ID_EX_NPC <= 0;
             ID_EX_IMM <= 0;
             ID_EX_TYPE <= NOP;
-        end else if (!HALTED) begin
+        end else if (!HALTED && ID_EX_TYPE != HALT) begin
             ID_EX_IR <= IF_ID_IR;
             ID_EX_NPC <= IF_ID_NPC;
 
