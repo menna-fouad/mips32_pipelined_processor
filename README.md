@@ -1,4 +1,4 @@
-#  Week 8 Implementation of a Pipelined Processor
+#  MIPS32 Pipelined Processor
 
 We will implement a MIPS32 (RISC) processor. It is a 32-bit processor that can operate on 32-bit data.
 
@@ -239,39 +239,22 @@ After the processor passed behavioral simulation for testbenches 1-3, the design
  
 ### Design changes for synthesis
  
-* Converted the design from two clocks to a single clock, since a using two clocks isn't suitable for the FPGA target.
-* Converted `main_memory` and `register_file` from 2D behavioral arrays into BRAM modules (`(* ram_style = "block" *)`)
-  * `main_memory`: Port A is read-only (reading `instruction` at the address stored in the `PC` during the IF stage) and Port B is a combined read/write port (`addr`/`write`/`data_in` → `data_out`, MEM stage), it unconditionally reads `memory[addr]` every cycle and conditionally writes `data_in` into the same address when `write` is asserted, following the standard simple-dual-port BRAM pattern.
-  * `register_file`: 2 read ports (`rs`, `rt`) plus a write port
-* Added forwarding in the `register_file.v` (mapped to Distribute RAM during synthesis) to fix a data hazard between a WB-stage write and an ID-stage read.
-* No forwarding / hazard-detection unit was added — programs still rely on manual 3-instruction gaps (2 dummy instructions) between dependent instructions to avoid RAW hazards.
-* Discovered that `main_memory`'s instruction output register originally had no reset gate (`instruction <= memory[PC]` was executed unconditionally every cycle). This register held an undefined (`X`) value until the first real fetch completed. `IF_ID_IR` could latch that `X`, and since `X` doesn't match any opcode, the ID stage's decode `case` executed the `default` branch, which set the instruction type to HALT.
+* ⏱️ Converted the design from two clocks to a single clock, since a using two clocks isn't suitable for the FPGA target.
+* 💾 Modelled `main_memory` and `register_file` modules as BRAM (`(* ram_style = "block" *)`)
+* ⏩ Added forwarding in the `register_file.v` (mapped to Distribute RAM during synthesis) to fix a data hazard between a WB-stage write and an ID-stage read.
 
 ### Mapping to the Board
  
-* Initialized the `main_memory` using `$readmemh("instructions.mem", memory)` and `register_file` with `$readmemh("regfile1.mem", memory)` and `$readmemh("regfile2.mem", memory)` similar to the for loop initializing the register bank in the testbenches.
+* Initialized the `main_memory` and `register_file` using `.mem` files.
 * Added a top-level wrapper (`top_nexys_a7`):
   * Debounces and synchronizes the reset button through `debounce_sync`.
   * Divides the 100MHz onboard clock down via `clk_divider` to a processor-visible slow clock.
   * Drives `led[0]` from the halt flag and `led[10:1]` from the program counter.
-  * Multiplexes a 7-segment display between PC, retiring instruction, latest ALU result, and halt flag, selected by `sw[1:0]`.
+  * A 7-segment display using `sw[1:0]` to select between PC, retiring instruction, latest ALU result, and halt flag.
 * Added an XDC constraints file for the input and output pins.
 * Wrote and passed unit-level testbenches for `clock_divider.v` and `debounce_sync.v`, verifying clock division, reset debounce, and the 7 segment display behavior in isolation.
-* The step-clock / `BUFGMUX` clock-mux path is deliberately left commented out in `top_module.v`, since single-step debug mode was out of scope without a physical board available at the time.
-
-### Debug signal using Vivado's ILA (Integrated Logic Analyzer)
-
-I added the `(* mark_debug = "true" *)` attribute to several registers across the pipeline so that they remain observable via the ILA over the JTAG on a physical FPGA board.
- 
-### Integration testbench (`top_module_tb.v`)
- 
-A full end-to-end integration testbench that instantiates `top_nexys_a7` directly and:
- 
-* Drives a realistic `btnC` reset (glitch stabilize high) using shrunk debounce/divider timing parameters for fast simulation.
-* Waits for halt via `led[0]`.
-* Checks the final PC on `led[10:1]`.
-* Ensures that the 7-segment display mux displays the correct value (`dbg_pc`, `dbg_instr`, `dbg_alu_out`, or `dbg_halted`) chosen using `sw[1:0]`.
-* This testbench uncovered a real pipeline bug during post-synthesis functional simulation. Initially, the if there wasn't a branch taken, then the PC updated was gated by the fact that the current instruction fetched wasn't a halt instruction `(IF_ID_IR[31:26] == HLT)`. However, when a HALT instruction was fetched, the PC updated to the next position in memory during the same cycle, so in the next cycle, while the condition was true, we were fetching the next instruction in memory making the condition false for future cycles. The solution: replaced the one-time check with a halt_seen register that latches once the halt instruction is fetched and only resets when a new program is loaded, so the gate stays asserted on every subsequent cycle instead of only the one cycle HLT happens to sit in IF_ID_IR.
+* Wrote and passed a full end-to-end integration testbench.
+* Added the `(* mark_debug = "true" *)` attribute to several pipeline registers for observable via the ILA over the JTAG on a physical FPGA board.
  
 ### Verification flow
  
