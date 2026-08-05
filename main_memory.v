@@ -20,7 +20,7 @@ module main_memory(
 
     // Fetch instruction at PC
     always @(posedge clk) begin
-        if (reset) instruction <= 32'b0; // or a NOP-equivalent opcode
+        if (!reset) instruction <= 32'b0; // or a NOP-equivalent opcode
         else instruction <= memory[PC];
     end
 

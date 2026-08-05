@@ -11,27 +11,35 @@ module register_file (
     (* ram_style = "block" *) reg [31:0] bram1 [0:31];
     (* ram_style = "block" *) reg [31:0] bram2 [0:31];
 
-    // BRAM 1: Handles Write (Port A) and Read rs (Port B)
-    always @(posedge clk) begin
-        if (reg_write && (wr_addr != 5'b0)) begin
-            bram1[wr_addr] <= wr_data;
-        end
-        
-        if (reg_write && (wr_addr != 5'b0) && (wr_addr == rs_addr))
-            rs_data <= wr_data; // Forwarding
-        else
-            rs_data <= bram1[rs_addr];
+    initial begin
+        $readmemh("regfile1.mem", bram1);
+        $readmemh("regfile2.mem", bram2);
     end
 
-    // BRAM 2: Handles Write (Port A) and Read rt (Port B)
+    // BRAM 1: Handles Write (Port A) and Read rs (Port B)
+    wire [31:0] rs_raw, rt_raw;
+    reg  bypass_rs, bypass_rt;
+    reg [31:0] wr_data_r;
+    
     always @(posedge clk) begin
-        if (reg_write && (wr_addr != 5'b0)) begin
+        bypass_rs <= reg_write && (wr_addr != 5'd0) && (wr_addr == rs_addr);
+        bypass_rt <= reg_write && (wr_addr != 5'd0) && (wr_addr == rt_addr);
+        wr_data_r <= wr_data;
+    end
+    
+    // Unconditional read
+    reg [31:0] rs_q, rt_q;
+    always @(posedge clk) begin
+        if (reg_write && (wr_addr != 5'd0)) begin
+            bram1[wr_addr] <= wr_data;
             bram2[wr_addr] <= wr_data;
         end
-        
-        if (reg_write && (wr_addr != 5'b0) && (wr_addr == rt_addr))
-            rt_data <= wr_data; // Forwarding
-        else
-            rt_data <= bram2[rt_addr];
+        rs_q <= bram1[rs_addr];
+        rt_q <= bram2[rt_addr];
+    end
+    
+    always @(*) begin
+        rs_data = bypass_rs ? wr_data_r : rs_q;
+        rt_data = bypass_rt ? wr_data_r : rt_q;
     end
 endmodule

@@ -44,7 +44,8 @@ module MIPS32 # (
 
     
     wire [9:0] INST_ADDR;
-    assign INST_ADDR = (TAKEN_BRANCH ||  (EX_MEM_TYPE == JUMP)) ? EX_MEM_ALU_OUT[9:0] : PC;
+    assign INST_ADDR = (TAKEN_BRANCH || (EX_MEM_TYPE == JUMP)) ? EX_MEM_ALU_OUT[9:0]
+                        : PC;
 
     assign dbg_pc = PC;
     assign dbg_halted = HALTED;
@@ -63,7 +64,7 @@ module MIPS32 # (
     );
 
     wire reg_write;
-    assign reg_write = !reset && !HALTED && 
+    assign reg_write = reset && !HALTED && 
     ((MEM_WB_TYPE == R) || (MEM_WB_TYPE == I) || (MEM_WB_TYPE == LOAD));
 
     // Target register: rd for R-type, rt for I-type and LOADs
@@ -85,17 +86,22 @@ module MIPS32 # (
         .wr_data(wr_data)
     );
 
-
+    reg halt_seen = 1'b0;
+    
     // Stage 1: Instruction Fetch (IF)
     always @(posedge clk) begin
-        if (reset) begin
+        if (!reset) begin
             PC <= 10'd0;
             IF_ID_NPC <= 32'd0;
+            halt_seen = 1'b0;
         end else if (!HALTED) begin
             if (TAKEN_BRANCH ||  (EX_MEM_TYPE == JUMP)) begin
                 IF_ID_NPC <= EX_MEM_ALU_OUT + 1;
                 PC <= EX_MEM_ALU_OUT[9:0] + 1;
-            end else if (IF_ID_IR[31:26] != HLT) begin
+            end else if (IF_ID_IR[31:26] == HLT || halt_seen) begin
+                halt_seen <= 1'b1;
+            end
+            else begin
                 IF_ID_NPC <= PC + 1;
                 PC <= PC + 1;
             end
@@ -104,7 +110,7 @@ module MIPS32 # (
 
     // Stage 2: Instruction Decode (ID)
     always @(posedge clk) begin
-        if (reset) begin
+        if (!reset) begin
             ID_EX_IR <= 0;
             ID_EX_NPC <= 0;
             ID_EX_IMM <= 0;
@@ -134,7 +140,7 @@ module MIPS32 # (
 
     // Stage 3: Execute (EX)
     always @(posedge clk) begin
-        if (reset) begin
+        if (!reset) begin
             EX_MEM_TYPE <= NOP;
             EX_MEM_IR <= 0;
             EX_MEM_ALU_OUT <= 0;
@@ -200,7 +206,7 @@ module MIPS32 # (
     // Stage 4: Memory Access (Mem)
     always @(posedge clk) begin
         // MEM_WB_LMD
-        if (reset) begin
+        if (!reset) begin
             MEM_WB_IR <= 0;
             MEM_WB_TYPE <= NOP;
             MEM_WB_ALU_OUT <= 0;
@@ -214,7 +220,7 @@ module MIPS32 # (
 
     // Stage 5: Write back (WB)
     always @(posedge clk) begin
-        if (reset) HALTED <= 1'b0;
+        if (!reset) HALTED <= 1'b0;
         else if (MEM_WB_TYPE == HALT) HALTED <= 1'b1;
     end
 endmodule
