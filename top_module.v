@@ -1,6 +1,5 @@
 module top_nexys_a7 #(
-    parameter DEBOUNCE_BITS = 6,
-    parameter DIV_BITS = 3
+    parameter DEBOUNCE_BITS = 6
 ) (
     input  wire clk_100mhz, // pin E3, onboard oscillator
     input  wire btnC, // reset button
@@ -12,31 +11,25 @@ module top_nexys_a7 #(
     output wire [7:0] an,
     output wire [6:0] seg
 );
+    wire slow_clk;
+    clk_wiz_0 clock_generator (
+        .clk_100mhz(clk_100mhz),
+        .clk_out1(slow_clk)
+    );
+    
     wire reset_clean;
     debounce_sync #(.DEBOUNCE_BITS(DEBOUNCE_BITS)) reset_db (
-        .clk(clk_100mhz),
+        .clk(slow_clk),
         .raw_in(btnC),
         .clean_out(reset_clean)
     );
 
     // wire step_clean;
     // debounce_sync #(.DEBOUNCE_BITS(DEBOUNCE_BITS)) step_db (
-        // .clk(clk_100mhz),
+        // .clk(slow_clk),
         // .raw_in(btnU),
         // .clean_out(step_clean)
     // );
-    
-    wire slow_clk_raw;
-    clk_divider #(.DIV_BITS(DIV_BITS)) divider (
-        .clk_in(clk_100mhz),
-        .clk_out(slow_clk_raw)
-    );
-    
-    wire slow_clk;
-    BUFG clk_bufg_inst (
-        .I(slow_clk_raw),
-        .O(slow_clk)
-    );
     
     reg reset_sync = 1'b0;
     reg reset = 1'b0;

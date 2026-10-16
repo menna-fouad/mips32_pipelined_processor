@@ -8,6 +8,7 @@ Features:
     * Register R0 stores the value 0 and is read-only (cannot be written to)
 * It has no flag registers (like zero, sign, carry, etc.)
 * The memory word size is 32-bits (word addressable)
+* The processor runs with a frequency of 70 MHz, achieving a 70 MHz post-route timing closure, with +0.603 ns WNS, +0.015 ns WHS and an estimated post-route Fmax of 73.1 MHz
 
 ## MIPS32 Instructions
 
@@ -248,11 +249,11 @@ After the processor passed behavioral simulation for testbenches 1-3, the design
 * Initialized the `main_memory` and `register_file` using `.mem` files.
 * Added a top-level wrapper (`top_nexys_a7`):
   * Debounces and synchronizes the reset button through `debounce_sync`.
-  * Divides the 100MHz onboard clock down via `clk_divider` to a processor-visible slow clock.
+  * Divides the 100MHz onboard clock down via `Vivado's Clocking Wizard` to a 70 MHz.
   * Drives `led[0]` from the halt flag and `led[10:1]` from the program counter.
   * A 7-segment display using `sw[1:0]` to select between PC, retiring instruction, latest ALU result, and halt flag.
 * Added an XDC constraints file for the input and output pins.
-* Wrote and passed unit-level testbenches for `clock_divider.v` and `debounce_sync.v`, verifying clock division, reset debounce, and the 7 segment display behavior in isolation.
+* Wrote and passed unit-level testbenches, verifying clock division, reset debounce, and the 7 segment display behavior in isolation.
 * Wrote and passed a full end-to-end integration testbench.
 * Added the `(* mark_debug = "true" *)` attribute to several pipeline registers for observable via the ILA over the JTAG on a physical FPGA board.
  
